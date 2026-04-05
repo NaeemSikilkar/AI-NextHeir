@@ -208,7 +208,7 @@ async def refresh_token(request: Request, response: Response):
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
 # --- Scenario Endpoints ---
-@api_router.post("/scenarios")
+@api_router.post("/scenarios", status_code=201)
 async def create_scenario(input: ScenarioCreateInput, request: Request):
     user = await get_current_user(request)
     assets = []
