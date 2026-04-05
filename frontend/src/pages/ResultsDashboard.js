@@ -86,7 +86,13 @@ export default function ResultsDashboard() {
 
   const pieData = result.distribution?.map((d) => ({
     name: d.name, value: d.percentage_of_total, amount: d.total_value,
-  })) || [];
+  })).filter((d) => d.value > 0) || [];
+
+  const totalPieValue = pieData.reduce((s, d) => s + d.value, 0);
+
+  // Debug log for distribution data
+  console.log("[NextHeir] Distribution data:", JSON.stringify(pieData));
+  console.log("[NextHeir] Total pie value:", totalPieValue);
 
   const barData = result.future_projections?.map((f) => ({
     name: f.asset_name.length > 15 ? f.asset_name.slice(0, 15) + "..." : f.asset_name,
@@ -175,27 +181,35 @@ export default function ResultsDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flat-card rounded-2xl p-6" data-testid="distribution-chart">
             <p className="text-xs font-bold tracking-[0.2em] uppercase text-[#6b726d] mb-6">Wealth Distribution</p>
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3} dataKey="value">
-                  {pieData.map((_, idx) => (
-                    <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+            {totalPieValue > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3} dataKey="value">
+                      {pieData.map((_, idx) => (
+                        <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ background: "#121513", border: "1px solid #232824", borderRadius: "8px", color: "#fff" }}
+                      formatter={(value, name) => [`${value}%`, name]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex flex-wrap gap-3 mt-4">
+                  {pieData.map((d, i) => (
+                    <div key={d.name} className="flex items-center gap-2 text-xs">
+                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                      <span className="text-[#a3a8a4]">{d.name}: {d.value}%</span>
+                    </div>
                   ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ background: "#121513", border: "1px solid #232824", borderRadius: "8px", color: "#fff" }}
-                  formatter={(value, name) => [`${value}%`, name]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex flex-wrap gap-3 mt-4">
-              {pieData.map((d, i) => (
-                <div key={d.name} className="flex items-center gap-2 text-xs">
-                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                  <span className="text-[#a3a8a4]">{d.name}: {d.value}%</span>
                 </div>
-              ))}
-            </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-[280px] text-sm text-[#6b726d]" data-testid="no-distribution-msg">
+                No valid distribution data available
+              </div>
+            )}
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flat-card rounded-2xl p-6" data-testid="projection-chart">

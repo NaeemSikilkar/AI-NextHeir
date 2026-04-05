@@ -84,6 +84,7 @@ class LoginInput(BaseModel):
     password: str
 
 class AssetInput(BaseModel):
+    id: Optional[str] = None
     asset_type: str
     asset_name: str
     purchased_year: int
@@ -93,6 +94,7 @@ class AssetInput(BaseModel):
     appreciation_percent: float
 
 class FamilyMemberInput(BaseModel):
+    id: Optional[str] = None
     name: str
     relationship: str
     age: int
@@ -214,12 +216,12 @@ async def create_scenario(input: ScenarioCreateInput, request: Request):
     assets = []
     for a in input.assets:
         asset_dict = a.model_dump()
-        asset_dict["id"] = str(uuid.uuid4())
+        asset_dict["id"] = a.id or str(uuid.uuid4())
         assets.append(asset_dict)
     members = []
     for m in input.family_members:
         member_dict = m.model_dump()
-        member_dict["id"] = str(uuid.uuid4())
+        member_dict["id"] = m.id or str(uuid.uuid4())
         members.append(member_dict)
     allocations = []
     for alloc in input.allocations:
@@ -274,14 +276,14 @@ async def update_scenario(scenario_id: str, input: ScenarioUpdateInput, request:
         assets = []
         for a in input.assets:
             asset_dict = a.model_dump()
-            asset_dict["id"] = str(uuid.uuid4())
+            asset_dict["id"] = a.id or str(uuid.uuid4())
             assets.append(asset_dict)
         update_data["assets"] = assets
     if input.family_members is not None:
         members = []
         for m in input.family_members:
             member_dict = m.model_dump()
-            member_dict["id"] = str(uuid.uuid4())
+            member_dict["id"] = m.id or str(uuid.uuid4())
             members.append(member_dict)
         update_data["family_members"] = members
     if input.allocations is not None:
@@ -308,21 +310,40 @@ def calculate_simulation(scenario: dict) -> dict:
     assets = scenario.get("assets", [])
     members = scenario.get("family_members", [])
     allocations = scenario.get("allocations", [])
-    total_value = sum(a.get("current_value", 0) * (a.get("ownership_percent", 100) / 100) for a in assets)
+
+    # Ensure numeric values
+    for a in assets:
+        a["current_value"] = float(a.get("current_value", 0) or 0)
+        a["purchase_price"] = float(a.get("purchase_price", 0) or 0)
+        a["ownership_percent"] = float(a.get("ownership_percent", 100) or 100)
+
+    total_value = sum(a["current_value"] * (a["ownership_percent"] / 100) for a in assets)
+
     member_values = {}
     for m in members:
         member_values[m["id"]] = {"name": m["name"], "relationship": m["relationship"], "total_value": 0, "assets": []}
+
+    logger.info(f"Simulation: {len(assets)} assets, {len(members)} members, {len(allocations)} allocations, total_value={total_value}")
+    logger.info(f"Asset IDs: {[a['id'] for a in assets]}")
+    logger.info(f"Member IDs: {[m['id'] for m in members]}")
+    logger.info(f"Allocation asset_ids: {[al.get('asset_id') for al in allocations]}")
+
     for alloc in allocations:
         asset_id = alloc.get("asset_id")
         asset = next((a for a in assets if a["id"] == asset_id), None)
         if not asset:
+            logger.warning(f"Allocation references unknown asset_id={asset_id}")
             continue
-        asset_value = asset.get("current_value", 0) * (asset.get("ownership_percent", 100) / 100)
+        asset_value = asset["current_value"] * (asset["ownership_percent"] / 100)
         for mid, pct in alloc.get("distributions", {}).items():
+            pct = float(pct or 0)
             if mid in member_values:
                 share = asset_value * (pct / 100)
                 member_values[mid]["total_value"] += share
-                member_values[mid]["assets"].append({"asset_name": asset["asset_name"], "percentage": pct, "value": share})
+                member_values[mid]["assets"].append({"asset_name": asset["asset_name"], "percentage": pct, "value": round(share, 2)})
+            else:
+                logger.warning(f"Allocation references unknown member_id={mid}")
+
     distribution = []
     for mid, data in member_values.items():
         pct_of_total = (data["total_value"] / total_value * 100) if total_value > 0 else 0
@@ -331,6 +352,8 @@ def calculate_simulation(scenario: dict) -> dict:
             "total_value": round(data["total_value"], 2), "percentage_of_total": round(pct_of_total, 2),
             "assets": data["assets"]
         })
+
+    logger.info(f"Computed distribution: {[(d['name'], d['percentage_of_total']) for d in distribution]}")
     # Fairness score: 100 = perfectly equal, 0 = all to one person
     if len(distribution) > 1:
         percentages = [d["percentage_of_total"] for d in distribution]

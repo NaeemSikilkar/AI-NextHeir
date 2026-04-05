@@ -148,11 +148,24 @@ export default function ScenarioCreate() {
     try {
       const payload = {
         name: scenarioName,
-        assets: assets.map(({ id: _id, ...rest }) => ({
-          ...rest,
-          appreciation_percent: calcAppreciation(rest.purchase_price, rest.current_value),
+        assets: assets.map((a) => ({
+          id: a.id,
+          asset_type: a.asset_type,
+          asset_name: a.asset_name,
+          purchased_year: a.purchased_year,
+          purchase_price: a.purchase_price,
+          current_value: a.current_value,
+          ownership_percent: a.ownership_percent,
+          appreciation_percent: calcAppreciation(a.purchase_price, a.current_value),
         })),
-        family_members: members.map(({ id: _id, ...rest }) => rest),
+        family_members: members.map((m) => ({
+          id: m.id,
+          name: m.name,
+          relationship: m.relationship,
+          age: m.age,
+          profession: m.profession,
+          description: m.description,
+        })),
         allocations: Object.entries(allocations).map(([assetId, dist]) => ({
           asset_id: assetId,
           distributions: dist,
