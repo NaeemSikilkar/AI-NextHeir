@@ -1,0 +1,177 @@
+{
+  "theme": "dark",
+  "archetype": "Archetype 5: Jewel & Luxury (Premium Wealth Management)",
+  "design_philosophy": {
+    "core_principles": [
+      "Fusion over Imitation: Mix Old Money private wealth aesthetics with modern AI SaaS precision.",
+      "Emotion First: The UI must evoke absolute trust, privacy, and calm. Avoid loud 'tech bro' elements.",
+      "Negative Space: Utilize generous padding to make financial data feel manageable, not overwhelming.",
+      "Contrast: Deep obsidian backgrounds paired with glowing metallic sage accents to guide attention."
+    ],
+    "vibe": "Old Money Tech, Cinematic, Objective, Sophisticated"
+  },
+  "colors": {
+    "background": {
+      "default": "#0a0c0a",
+      "surface": "#121513",
+      "glass": "rgba(20, 24, 22, 0.6)"
+    },
+    "text": {
+      "primary": "#ffffff",
+      "secondary": "#a3a8a4",
+      "muted": "#6b726d"
+    },
+    "brand": {
+      "primary": "#7c9082",
+      "primary_hover": "#98ab9e",
+      "accent": "#5a6b5f"
+    },
+    "status": {
+      "success": "#7c9082",
+      "warning": "#c28e5c",
+      "error": "#b35959",
+      "info": "#6b8e99"
+    },
+    "border": {
+      "default": "#232824",
+      "focus": "#7c9082",
+      "glass": "rgba(255, 255, 255, 0.08)"
+    },
+    "charts": [
+      "#7c9082",
+      "#c28e5c",
+      "#8e998f",
+      "#4a554e",
+      "#b0b8b2"
+    ]
+  },
+  "typography": {
+    "fonts": {
+      "heading": "Cabinet Grotesk, sans-serif",
+      "body": "Satoshi, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "scales": {
+      "h1": "text-4xl md:text-5xl lg:text-6xl tracking-tight font-medium",
+      "h2": "text-2xl md:text-3xl lg:text-4xl tracking-tight font-medium",
+      "h3": "text-xl md:text-2xl tracking-tight font-medium",
+      "h4": "text-lg md:text-xl font-medium",
+      "body": "text-base leading-relaxed text-[#a3a8a4]",
+      "small": "text-sm text-[#a3a8a4]",
+      "overline": "text-xs font-bold tracking-[0.2em] uppercase text-[#6b726d]"
+    }
+  },
+  "spacing_and_layout": {
+    "padding": {
+      "section": "py-24 md:py-32",
+      "container": "px-6 md:px-12 max-w-7xl mx-auto",
+      "card": "p-8 md:p-10"
+    },
+    "grid": {
+      "bento": "grid grid-cols-1 md:grid-cols-12 gap-8",
+      "dashboard": "grid grid-cols-1 md:grid-cols-4 gap-6"
+    },
+    "radius": {
+      "card": "rounded-2xl",
+      "button": "rounded-full",
+      "input": "rounded-lg"
+    }
+  },
+  "surfaces": {
+    "glassmorphism": {
+      "classes": "bg-[#141816]/60 backdrop-blur-2xl border border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
+      "usage": "Headers, Floating Navs, AI Chat Overlays, Modals"
+    },
+    "flat_cards": {
+      "classes": "bg-[#121513] border border-[#232824] shadow-sm",
+      "usage": "Dashboard widgets, Data tables, Input forms"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-[#7c9082] text-[#0a0c0a] hover:bg-[#98ab9e] font-medium transition-colors duration-200 px-6 py-3 rounded-full shadow-[0_0_15px_rgba(124,144,130,0.3)] hover:shadow-[0_0_25px_rgba(124,144,130,0.5)]",
+      "secondary": "bg-transparent border border-[#3a423d] text-white hover:border-[#7c9082] hover:bg-[#121513] transition-colors duration-200 px-6 py-3 rounded-full"
+    },
+    "inputs": {
+      "classes": "bg-[#0a0c0a] border border-[#232824] text-white focus:ring-1 focus:ring-[#7c9082] focus:border-[#7c9082] transition-all rounded-lg placeholder-[#4a554e]"
+    },
+    "icons": {
+      "library": "lucide-react",
+      "style": "stroke-[1.5px] text-[#7c9082]"
+    }
+  },
+  "motion": {
+    "hover": "transition-all duration-300 ease-out",
+    "page_load": "framer-motion opacity-0 translate-y-4 to opacity-100 translate-y-0 duration-500",
+    "stagger": "staggerChildren: 0.1"
+  },
+  "media": {
+    "image_urls": {
+      "hero_background": {
+        "url": "https://images.unsplash.com/photo-1749765804007-a7e74a11f1d5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzB8MHwxfHNlYXJjaHwyfHxwcmVtaXVtJTIwYmxhY2slMjBzYWdlJTIwZ3JlZW4lMjBhYnN0cmFjdCUyMHRleHR1cmV8ZW58MHx8fHwxNzc1MzY4NzkxfDA&ixlib=rb-4.1.0&q=85",
+        "description": "Diagonal lines on a green and black background, abstract luxury."
+      },
+      "auth_split_bg": {
+        "url": "https://images.unsplash.com/photo-1683395715087-931a7eed3f78?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzl8MHwxfHNlYXJjaHwzfHx3ZWFsdGglMjBmaW5hbmNlJTIwYWJzdHJhY3QlMjBkYXJrfGVufDB8fHx8MTc3NTM2ODgxMXww&ixlib=rb-4.1.0&q=85",
+        "description": "Black and white photo with green lights, sophisticated dark finance vibe."
+      },
+      "landing_estate_1": {
+        "url": "https://images.unsplash.com/photo-1505843513577-22bb7d21e455?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzl8MHwxfHNlYXJjaHwyfHxoaWdoJTIwbmV0JTIwd29ydGglMjBmYW1pbHklMjBsdXh1cnklMjBlc3RhdGV8ZW58MHx8fHwxNzc1MzY4NzkxfDA&ixlib=rb-4.1.0&q=85",
+        "description": "White and black lighted concrete house. Used for 'Add Assets' or luxury wealth context."
+      },
+      "dashboard_texture": {
+        "url": "https://images.unsplash.com/photo-1649300610544-9a9a1c315d0e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzB8MHwxfHNlYXJjaHwzfHxwcmVtaXVtJTIwYmxhY2slMjBzYWdlJTIwZ3JlZW4lMjBhYnN0cmFjdCUyMHRleHR1cmV8ZW58MHx8fHwxNzc1MzY4NzkxfDA&ixlib=rb-4.1.0&q=85",
+        "description": "Black and green background with wavy lines, subtle texture for dashboard headers."
+      }
+    }
+  },
+  "pages": {
+    "landing": {
+      "hero": "Full viewport height. Background image 'hero_background' with an overlay of bg-[#0a0c0a]/70. Content centered or heavily asymmetric to the left. Massive H1 in Cabinet Grotesk.",
+      "how_it_works": "Bento grid layout. 3 cards outlining the steps. Use borders and subtle glass effects. Generous padding (p-12).",
+      "trust_section": "Monochrome logos in a subtle marquee. Text should emphasize 'Secure, Private, Built for HNIs'."
+    },
+    "auth": {
+      "layout": "50/50 split screen on desktop. Left side uses 'auth_split_bg' with a gradient overlay. Right side is pure #0a0c0a with the login form vertically centered.",
+      "components": "Customized Shadcn forms. Inputs with dark backgrounds and subtle sage focus rings."
+    },
+    "dashboard": {
+      "layout": "Sidebar navigation (darker than main body) + Top header (glassmorphism).",
+      "content": "Control room grid. Welcome section spans full width. Saved scenarios are grid-cols-1 md:grid-cols-3. Flat cards with subtle hover lift (-translate-y-1)."
+    },
+    "scenario_creation": {
+      "layout": "Multi-step wizard. Use a sleek, horizontal stepper at the top.",
+      "step_1": "Asset Input. Grid of asset cards. Form to add new assets. Use JetBrains Mono for monetary values.",
+      "step_2": "Family Mapping. List or grid of family members with minimal avatars (use initials if no image).",
+      "step_3": "Scenario Builder. Dense data table (Shadcn Table). Use progress bars in table cells to show allocation percentages visually."
+    },
+    "simulation_flow": {
+      "loading_state": "Full screen overlay with a 'tracing beam' animation or a sophisticated geometric loader. NOT a standard spinner. Must feel like an AI is crunching complex algorithms."
+    },
+    "results_dashboard": {
+      "layout": "Bento grid mode B (Density).",
+      "charts": "Recharts pie/donut for wealth distribution. Use the defined 'charts' color palette.",
+      "metrics": "Fairness score as a prominent gauge or large typography metric. Risk alerts in a dedicated panel with warning colors (#c28e5c)."
+    },
+    "ai_chat_layer": {
+      "layout": "Floating panel or slide-out drawer on the right side. Must use high-end 'crystal' glassmorphism.",
+      "message_bubbles": "User: outlined border. AI: solid subtle background (#1a1d1a) with a metallic sage left border accent."
+    },
+    "compare_scenarios": {
+      "layout": "Split 50/50 vertical layout comparing two selected scenarios. Sticky headers for each scenario."
+    }
+  },
+  "accessibility": {
+    "contrast": "Ensure all text on dark backgrounds meets WCAG AA standards. If contrast is low, use text-shadow or increase text brightness.",
+    "testing_ids": "All interactive elements must have data-testid attributes (e.g., data-testid='run-simulation-btn')."
+  },
+  "instructions_to_main_agent": [
+    "Always use the dark theme classes explicitly (e.g., bg-[#0a0c0a], text-white).",
+    "Install and use 'lucide-react' for icons.",
+    "Use 'framer-motion' for page transitions and micro-interactions.",
+    "Do NOT use 'Inter' font. Import and configure 'Cabinet Grotesk' for headings, 'Satoshi' for body text, and 'JetBrains Mono' for numbers/data in tailwind.config.js.",
+    "For the UI, primarily use customized Shadcn UI components. Ensure you modify the default Shadcn styles to match the dark, metallic sage luxury aesthetic (no pure white cards, no default blue focus rings).",
+    "Use Recharts for the simulation results charts. Make sure the chart colors align with the 'charts' array in this JSON.",
+    "Ensure the hero image has a significant dark overlay (bg-[#0a0c0a]/70 or similar) so the white text remains highly legible."
+  ]
+}
