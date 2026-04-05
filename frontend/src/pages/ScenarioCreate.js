@@ -184,7 +184,14 @@ export default function ScenarioCreate() {
       toast.success("Simulation complete!");
       navigate(`/scenario/${scenarioId}/results`);
     } catch (err) {
-      toast.error("Failed to save scenario");
+      console.error("[NextHeir] Save/simulate error:", err?.response?.data || err.message);
+      const detail = err?.response?.data?.detail;
+      let msg = "Failed to save scenario";
+      if (detail) {
+        if (typeof detail === "string") msg = detail;
+        else if (Array.isArray(detail)) msg = detail.map(e => e?.msg || JSON.stringify(e)).join(", ");
+      }
+      toast.error(msg);
     } finally {
       setSaving(false);
       setSimulating(false);

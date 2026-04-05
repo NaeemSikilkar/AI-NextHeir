@@ -354,8 +354,14 @@ def calculate_simulation(scenario: dict) -> dict:
         })
 
     logger.info(f"Computed distribution: {[(d['name'], d['percentage_of_total']) for d in distribution]}")
+
+    # Check if any distribution was actually computed
+    total_distributed = sum(d["total_value"] for d in distribution)
+    if total_distributed == 0 and total_value > 0 and len(allocations) > 0:
+        logger.warning("Allocations exist but no value was distributed - possible ID mismatch")
+
     # Fairness score: 100 = perfectly equal, 0 = all to one person
-    if len(distribution) > 1:
+    if len(distribution) > 1 and total_distributed > 0:
         percentages = [d["percentage_of_total"] for d in distribution]
         ideal = 100 / len(percentages)
         deviations = sum(abs(p - ideal) for p in percentages)
@@ -384,6 +390,9 @@ def calculate_simulation(scenario: dict) -> dict:
         years_held = max(1, datetime.now(timezone.utc).year - purchased_year)
         annual_rate = ((current_raw / purchase) ** (1 / years_held) - 1) * 100 if purchase > 0 else 0
         future_val = current * ((1 + annual_rate / 100) ** 5)
+        # Guard against NaN/Infinity
+        if not isinstance(future_val, (int, float)) or future_val != future_val or future_val == float('inf'):
+            future_val = current
         future_values.append({"asset_name": a["asset_name"], "current_value": round(current, 2), "future_value_5yr": round(future_val, 2), "appreciation_percent": round(appreciation, 2)})
     return {
         "total_estate_value": round(total_value, 2),

@@ -1,100 +1,99 @@
 import requests
 import sys
 import json
+import uuid
 from datetime import datetime
 
 class NextHeirAPITester:
     def __init__(self, base_url="https://heir-planner.preview.emergentagent.com"):
         self.base_url = base_url
-        self.session = requests.Session()
-        self.session.headers.update({'Content-Type': 'application/json'})
+        self.session = requests.Session()  # Use session to handle cookies
         self.tests_run = 0
         self.tests_passed = 0
         self.user_id = None
-        self.scenario_id = None
+        self.scenario_ids = []
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, cookies=None):
+    def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):
         """Run a single API test"""
         url = f"{self.base_url}/api/{endpoint}"
+        test_headers = {'Content-Type': 'application/json'}
+        if headers:
+            test_headers.update(headers)
+
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")
         
         try:
             if method == 'GET':
-                response = self.session.get(url)
+                response = self.session.get(url, headers=test_headers)
             elif method == 'POST':
-                response = self.session.post(url, json=data)
+                response = self.session.post(url, json=data, headers=test_headers)
             elif method == 'PUT':
-                response = self.session.put(url, json=data)
+                response = self.session.put(url, json=data, headers=test_headers)
             elif method == 'DELETE':
-                response = self.session.delete(url)
+                response = self.session.delete(url, headers=test_headers)
 
             success = response.status_code == expected_status
             if success:
                 self.tests_passed += 1
                 print(f"✅ Passed - Status: {response.status_code}")
                 try:
-                    return success, response.json()
+                    return True, response.json()
                 except:
-                    return success, {}
+                    return True, {}
             else:
                 print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
                 try:
                     error_detail = response.json()
                     print(f"   Error: {error_detail}")
                 except:
-                    print(f"   Response: {response.text}")
+                    print(f"   Error: {response.text}")
                 return False, {}
 
         except Exception as e:
             print(f"❌ Failed - Error: {str(e)}")
             return False, {}
 
-    def test_register(self):
-        """Test user registration"""
-        test_user_data = {
-            "name": "Test User",
-            "email": f"test_{datetime.now().strftime('%H%M%S')}@example.com",
-            "password": "Test123!"
-        }
+    def test_register_fresh_user(self):
+        """Register a fresh test user"""
+        timestamp = datetime.now().strftime('%H%M%S')
+        test_email = f"testuser{timestamp}@test.com"
+        test_password = "Test123!"
+        
         success, response = self.run_test(
-            "User Registration",
+            "Register Fresh User",
             "POST",
             "auth/register",
             200,
-            data=test_user_data
+            data={
+                "name": f"Test User {timestamp}",
+                "email": test_email,
+                "password": test_password
+            }
         )
         if success:
             self.user_id = response.get('id')
-            print(f"   Registered user ID: {self.user_id}")
-        return success, test_user_data
+            print(f"   Registered user: {test_email}")
+            return test_email, test_password
+        return None, None
 
     def test_login(self, email, password):
-        """Test user login"""
+        """Test login and get token"""
         success, response = self.run_test(
-            "User Login",
+            "Login",
             "POST",
             "auth/login",
             200,
             data={"email": email, "password": password}
         )
         if success:
-            print(f"   Logged in user: {response.get('email')}")
-        return success
+            # Token should be in httpOnly cookie, but we'll try to get it from response
+            self.user_id = response.get('id')
+            return True
+        return False
 
-    def test_admin_login(self):
-        """Test admin login"""
-        success, response = self.run_test(
-            "Admin Login",
-            "POST",
-            "auth/login",
-            200,
-            data={"email": "admin@nextheir.com", "password": "Admin123!"}
-        )
-        return success
-
-    def test_get_me(self):
-        """Test get current user"""
+    def test_auth_me(self):
+        """Test getting current user info"""
         success, response = self.run_test(
             "Get Current User",
             "GET",
@@ -103,79 +102,155 @@ class NextHeirAPITester:
         )
         return success
 
-    def test_create_scenario(self):
-        """Test scenario creation"""
+    def test_create_scenario_with_ids(self):
+        """Create a scenario with specific IDs to test ID preservation"""
+        asset_id_1 = str(uuid.uuid4())
+        asset_id_2 = str(uuid.uuid4())
+        member_id_1 = str(uuid.uuid4())
+        member_id_2 = str(uuid.uuid4())
+        
         scenario_data = {
-            "name": "Test Inheritance Scenario",
+            "name": "Test Scenario - ID Preservation",
             "assets": [
                 {
+                    "id": asset_id_1,
                     "asset_type": "Property",
                     "asset_name": "Family Home",
-                    "purchased_year": 2000,
+                    "purchased_year": 2010,
                     "purchase_price": 500000,
                     "current_value": 800000,
                     "ownership_percent": 100,
-                    "appreciation_percent": 3
+                    "appreciation_percent": 60
+                },
+                {
+                    "id": asset_id_2,
+                    "asset_type": "Business",
+                    "asset_name": "Tech Startup",
+                    "purchased_year": 2015,
+                    "purchase_price": 100000,
+                    "current_value": 300000,
+                    "ownership_percent": 75,
+                    "appreciation_percent": 200
                 }
             ],
             "family_members": [
                 {
-                    "name": "John Doe",
-                    "relationship": "Son",
-                    "age": 30,
-                    "profession": "Engineer",
-                    "description": "Eldest son, responsible and stable"
-                },
-                {
-                    "name": "Jane Doe",
+                    "id": member_id_1,
+                    "name": "Alice Johnson",
                     "relationship": "Daughter",
                     "age": 28,
                     "profession": "Doctor",
-                    "description": "Youngest daughter, caring and ambitious"
+                    "description": "Eldest daughter, responsible and caring"
+                },
+                {
+                    "id": member_id_2,
+                    "name": "Bob Johnson",
+                    "relationship": "Son",
+                    "age": 25,
+                    "profession": "Engineer",
+                    "description": "Youngest son, innovative and ambitious"
                 }
             ],
-            "allocations": []
+            "allocations": [
+                {
+                    "asset_id": asset_id_1,
+                    "distributions": {
+                        member_id_1: 60,
+                        member_id_2: 40
+                    }
+                },
+                {
+                    "asset_id": asset_id_2,
+                    "distributions": {
+                        member_id_1: 40,
+                        member_id_2: 60
+                    }
+                }
+            ]
         }
         
-        # We need to set allocations after we have asset and member IDs
-        # For now, we'll create the scenario and update it
         success, response = self.run_test(
-            "Create Scenario",
+            "Create Scenario with IDs",
             "POST",
             "scenarios",
-            200,
+            201,
             data=scenario_data
         )
+        
         if success:
-            self.scenario_id = response.get('id')
-            print(f"   Created scenario ID: {self.scenario_id}")
+            scenario_id = response.get('id')
+            self.scenario_ids.append(scenario_id)
             
-            # Now update with proper allocations
-            assets = response.get('assets', [])
-            members = response.get('family_members', [])
+            # Verify IDs are preserved
+            print(f"   Verifying ID preservation...")
+            print(f"   Asset 1 ID: {asset_id_1} -> {response['assets'][0]['id']}")
+            print(f"   Asset 2 ID: {asset_id_2} -> {response['assets'][1]['id']}")
+            print(f"   Member 1 ID: {member_id_1} -> {response['family_members'][0]['id']}")
+            print(f"   Member 2 ID: {member_id_2} -> {response['family_members'][1]['id']}")
             
-            if assets and members:
-                allocations = [{
-                    "asset_id": assets[0]['id'],
-                    "distributions": {
-                        members[0]['id']: 60.0,  # John gets 60%
-                        members[1]['id']: 40.0   # Jane gets 40%
-                    }
-                }]
+            ids_preserved = (
+                response['assets'][0]['id'] == asset_id_1 and
+                response['assets'][1]['id'] == asset_id_2 and
+                response['family_members'][0]['id'] == member_id_1 and
+                response['family_members'][1]['id'] == member_id_2
+            )
+            
+            if ids_preserved:
+                print(f"   ✅ IDs preserved correctly")
+            else:
+                print(f"   ❌ IDs not preserved")
                 
-                scenario_data['allocations'] = allocations
-                update_success, _ = self.run_test(
-                    "Update Scenario with Allocations",
-                    "PUT",
-                    f"scenarios/{self.scenario_id}",
-                    200,
-                    data=scenario_data
-                )
-                return update_success
-        return success
+            return scenario_id
+        return None
+
+    def test_run_simulation(self, scenario_id):
+        """Test running simulation on a scenario"""
+        success, response = self.run_test(
+            "Run Simulation",
+            "POST",
+            f"scenarios/{scenario_id}/simulate",
+            200
+        )
+        
+        if success:
+            # Verify simulation results
+            total_value = response.get('total_estate_value', 0)
+            distribution = response.get('distribution', [])
+            fairness_score = response.get('fairness_score', 0)
+            
+            print(f"   Total Estate Value: {total_value}")
+            print(f"   Fairness Score: {fairness_score}")
+            print(f"   Distribution:")
+            
+            total_percentage = 0
+            for d in distribution:
+                print(f"     {d['name']}: {d['percentage_of_total']}% ({d['total_value']})")
+                total_percentage += d['percentage_of_total']
+            
+            print(f"   Total Percentage: {total_percentage}%")
+            
+            # Verify non-zero distribution
+            has_non_zero = any(d['percentage_of_total'] > 0 for d in distribution)
+            if has_non_zero:
+                print(f"   ✅ Non-zero distribution percentages found")
+            else:
+                print(f"   ❌ All distribution percentages are zero")
+                
+            return response
+        return None
+
+    def test_get_scenario(self, scenario_id):
+        """Test getting a scenario by ID"""
+        success, response = self.run_test(
+            "Get Scenario",
+            "GET",
+            f"scenarios/{scenario_id}",
+            200
+        )
+        return success, response
 
     def test_list_scenarios(self):
-        """Test listing scenarios"""
+        """Test listing all scenarios"""
         success, response = self.run_test(
             "List Scenarios",
             "GET",
@@ -184,141 +259,243 @@ class NextHeirAPITester:
         )
         if success:
             print(f"   Found {len(response)} scenarios")
-        return success
+        return success, response
 
-    def test_get_scenario(self):
-        """Test getting specific scenario"""
-        if not self.scenario_id:
-            print("❌ No scenario ID available for testing")
-            return False
-            
+    def test_update_scenario(self, scenario_id):
+        """Test updating a scenario"""
+        update_data = {
+            "name": "Updated Test Scenario"
+        }
+        
         success, response = self.run_test(
-            "Get Scenario",
-            "GET",
-            f"scenarios/{self.scenario_id}",
-            200
+            "Update Scenario",
+            "PUT",
+            f"scenarios/{scenario_id}",
+            200,
+            data=update_data
         )
+        
+        if success and response.get('name') == "Updated Test Scenario":
+            print(f"   ✅ Scenario name updated successfully")
         return success
 
-    def test_run_simulation(self):
-        """Test running simulation"""
-        if not self.scenario_id:
-            print("❌ No scenario ID available for simulation")
-            return False
-            
-        success, response = self.run_test(
-            "Run Simulation",
-            "POST",
-            f"scenarios/{self.scenario_id}/simulate",
-            200
-        )
-        if success:
-            fairness_score = response.get('fairness_score', 'N/A')
-            total_value = response.get('total_estate_value', 'N/A')
-            print(f"   Fairness Score: {fairness_score}")
-            print(f"   Total Estate Value: {total_value}")
-        return success
-
-    def test_ai_chat(self):
+    def test_ai_chat(self, scenario_id):
         """Test AI chat functionality"""
-        if not self.scenario_id:
-            print("❌ No scenario ID available for chat")
-            return False
-            
+        chat_data = {
+            "message": "Is this distribution fair?",
+            "scenario_id": scenario_id
+        }
+        
         success, response = self.run_test(
             "AI Chat",
             "POST",
             "chat",
             200,
-            data={
-                "message": "Is this distribution fair?",
-                "scenario_id": self.scenario_id
-            }
+            data=chat_data
         )
+        
         if success:
             ai_response = response.get('response', '')
+            session_id = response.get('session_id', '')
             print(f"   AI Response length: {len(ai_response)} characters")
-        return success
+            print(f"   Session ID: {session_id}")
+            if ai_response and session_id:
+                print(f"   ✅ AI chat working correctly")
+                return session_id
+        return None
 
-    def test_compare_chat(self):
-        """Test compare scenarios chat"""
-        if not self.scenario_id:
-            print("❌ No scenario ID available for compare chat")
-            return False
-            
-        # Use same scenario for both A and B for testing
+    def test_edge_case_single_asset_member(self):
+        """Test edge case: single asset and single member (100% allocation)"""
+        asset_id = str(uuid.uuid4())
+        member_id = str(uuid.uuid4())
+        
+        scenario_data = {
+            "name": "Edge Case - Single Asset/Member",
+            "assets": [
+                {
+                    "id": asset_id,
+                    "asset_type": "Property",
+                    "asset_name": "Solo Property",
+                    "purchased_year": 2020,
+                    "purchase_price": 200000,
+                    "current_value": 250000,
+                    "ownership_percent": 100,
+                    "appreciation_percent": 25
+                }
+            ],
+            "family_members": [
+                {
+                    "id": member_id,
+                    "name": "Solo Heir",
+                    "relationship": "Son",
+                    "age": 30,
+                    "profession": "Teacher",
+                    "description": "Only child"
+                }
+            ],
+            "allocations": [
+                {
+                    "asset_id": asset_id,
+                    "distributions": {
+                        member_id: 100
+                    }
+                }
+            ]
+        }
+        
         success, response = self.run_test(
-            "Compare Scenarios Chat",
+            "Create Edge Case Scenario",
             "POST",
-            "chat/compare",
-            200,
-            data={
-                "message": "Which scenario is better?",
-                "scenario_a_id": self.scenario_id,
-                "scenario_b_id": self.scenario_id
-            }
+            "scenarios",
+            201,
+            data=scenario_data
         )
+        
         if success:
-            ai_response = response.get('response', '')
-            print(f"   Compare AI Response length: {len(ai_response)} characters")
-        return success
+            scenario_id = response.get('id')
+            self.scenario_ids.append(scenario_id)
+            
+            # Run simulation
+            sim_success, sim_response = self.run_test(
+                "Simulate Edge Case",
+                "POST",
+                f"scenarios/{scenario_id}/simulate",
+                200
+            )
+            
+            if sim_success:
+                distribution = sim_response.get('distribution', [])
+                if len(distribution) == 1 and distribution[0]['percentage_of_total'] == 100:
+                    print(f"   ✅ Edge case handled correctly: 100% to single heir")
+                    return scenario_id
+                    
+        return None
 
-    def test_logout(self):
-        """Test user logout"""
+    def test_compare_scenarios(self):
+        """Test compare scenarios functionality"""
+        if len(self.scenario_ids) >= 2:
+            compare_data = {
+                "message": "Which scenario is better?",
+                "scenario_a_id": self.scenario_ids[0],
+                "scenario_b_id": self.scenario_ids[1]
+            }
+            
+            success, response = self.run_test(
+                "Compare Scenarios Chat",
+                "POST",
+                "chat/compare",
+                200,
+                data=compare_data
+            )
+            
+            if success:
+                ai_response = response.get('response', '')
+                print(f"   Compare AI Response length: {len(ai_response)} characters")
+                return True
+        else:
+            print(f"   ⚠️  Need at least 2 scenarios to test comparison")
+        return False
+
+    def test_delete_scenario(self, scenario_id):
+        """Test deleting a scenario"""
         success, response = self.run_test(
-            "User Logout",
-            "POST",
-            "auth/logout",
+            "Delete Scenario",
+            "DELETE",
+            f"scenarios/{scenario_id}",
             200
         )
         return success
 
+    def test_logout(self):
+        """Test logout"""
+        success, response = self.run_test(
+            "Logout",
+            "POST",
+            "auth/logout",
+            200
+        )
+        if success:
+            self.session.cookies.clear()
+        return success
+
 def main():
-    print("🚀 Starting NextHeir API Testing...")
+    print("🚀 Starting NextHeir API Testing - Iteration 3")
+    print("=" * 60)
+    
     tester = NextHeirAPITester()
     
-    # Test registration and login flow
-    reg_success, user_data = tester.test_register()
-    if not reg_success:
+    # Test 1: Register fresh user
+    email, password = tester.test_register_fresh_user()
+    if not email:
         print("❌ Registration failed, stopping tests")
         return 1
 
-    # Test admin login
-    admin_success = tester.test_admin_login()
-    if not admin_success:
-        print("⚠️ Admin login failed")
-
-    # Test login with registered user
-    login_success = tester.test_login(user_data['email'], user_data['password'])
-    if not login_success:
+    # Test 2: Login
+    if not tester.test_login(email, password):
         print("❌ Login failed, stopping tests")
         return 1
 
-    # Test authenticated endpoints
-    tester.test_get_me()
-    
-    # Test scenario management
-    scenario_success = tester.test_create_scenario()
-    if scenario_success:
-        tester.test_list_scenarios()
-        tester.test_get_scenario()
-        tester.test_run_simulation()
-        
-        # Test AI features
-        tester.test_ai_chat()
-        tester.test_compare_chat()
+    # Test 3: Auth me
+    if not tester.test_auth_me():
+        print("❌ Auth me failed")
 
-    # Test logout
-    tester.test_logout()
+    # Test 4: Create scenario with ID preservation
+    scenario_id_1 = tester.test_create_scenario_with_ids()
+    if not scenario_id_1:
+        print("❌ Scenario creation failed, stopping tests")
+        return 1
 
-    # Print final results
-    print(f"\n📊 Test Results: {tester.tests_passed}/{tester.tests_run} passed")
+    # Test 5: Run simulation
+    simulation_result = tester.test_run_simulation(scenario_id_1)
+    if not simulation_result:
+        print("❌ Simulation failed")
+
+    # Test 6: Get scenario
+    success, scenario_data = tester.test_get_scenario(scenario_id_1)
+    if not success:
+        print("❌ Get scenario failed")
+
+    # Test 7: List scenarios
+    success, scenarios_list = tester.test_list_scenarios()
+    if not success:
+        print("❌ List scenarios failed")
+
+    # Test 8: Update scenario
+    if not tester.test_update_scenario(scenario_id_1):
+        print("❌ Update scenario failed")
+
+    # Test 9: AI Chat
+    session_id = tester.test_ai_chat(scenario_id_1)
+    if not session_id:
+        print("❌ AI Chat failed")
+
+    # Test 10: Edge case - single asset/member
+    edge_scenario_id = tester.test_edge_case_single_asset_member()
+    if not edge_scenario_id:
+        print("❌ Edge case scenario failed")
+
+    # Test 11: Compare scenarios
+    if not tester.test_compare_scenarios():
+        print("❌ Compare scenarios failed")
+
+    # Test 12: Delete scenarios (cleanup)
+    for sid in tester.scenario_ids:
+        tester.test_delete_scenario(sid)
+
+    # Test 13: Logout
+    if not tester.test_logout():
+        print("❌ Logout failed")
+
+    # Print results
+    print("\n" + "=" * 60)
+    print(f"📊 Tests completed: {tester.tests_passed}/{tester.tests_run}")
+    print(f"Success rate: {(tester.tests_passed/tester.tests_run*100):.1f}%")
     
     if tester.tests_passed == tester.tests_run:
         print("🎉 All tests passed!")
         return 0
     else:
-        print("❌ Some tests failed")
+        print("⚠️  Some tests failed")
         return 1
 
 if __name__ == "__main__":
