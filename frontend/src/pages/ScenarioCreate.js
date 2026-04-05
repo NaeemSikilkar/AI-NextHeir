@@ -15,9 +15,14 @@ import { toast } from "sonner";
 const ASSET_TYPES = ["Property", "Business", "Mutual Funds", "Bullions/Precious Metals"];
 const RELATIONSHIPS = ["Son", "Daughter", "Spouse", "Sibling", "Parent", "Grandchild", "Other"];
 
+const calcAppreciation = (purchase, current) => {
+  if (!purchase || purchase === 0) return 0;
+  return parseFloat((((current - purchase) / purchase) * 100).toFixed(2));
+};
+
 const emptyAsset = () => ({
   id: crypto.randomUUID(), asset_type: "", asset_name: "", purchased_year: new Date().getFullYear(),
-  purchase_price: 0, current_value: 0, ownership_percent: 100, appreciation_percent: 5,
+  purchase_price: 0, current_value: 0, ownership_percent: 100,
 });
 
 const emptyMember = () => ({
@@ -143,7 +148,10 @@ export default function ScenarioCreate() {
     try {
       const payload = {
         name: scenarioName,
-        assets: assets.map(({ id: _id, ...rest }) => rest),
+        assets: assets.map(({ id: _id, ...rest }) => ({
+          ...rest,
+          appreciation_percent: calcAppreciation(rest.purchase_price, rest.current_value),
+        })),
         family_members: members.map(({ id: _id, ...rest }) => rest),
         allocations: Object.entries(allocations).map(([assetId, dist]) => ({
           asset_id: assetId,
@@ -281,9 +289,20 @@ export default function ScenarioCreate() {
                           className="bg-[#0a0c0a] border-[#232824] text-white h-10 font-mono" min={0} max={100} />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs text-[#6b726d]">Appreciation % (yearly)</Label>
-                        <Input data-testid={`asset-appreciation-${idx}`} type="number" value={asset.appreciation_percent} onChange={(e) => updateAsset(idx, "appreciation_percent", parseFloat(e.target.value) || 0)}
-                          className="bg-[#0a0c0a] border-[#232824] text-white h-10 font-mono" />
+                        <Label className="text-xs text-[#6b726d]">Asset Appreciation %</Label>
+                        {(() => {
+                          const appVal = calcAppreciation(asset.purchase_price, asset.current_value);
+                          return (
+                            <div
+                              data-testid={`asset-appreciation-${idx}`}
+                              className={`bg-[#0a0c0a] border border-[#232824] rounded-lg h-10 flex items-center px-3 font-mono text-sm ${
+                                appVal > 0 ? "text-[#7c9082]" : appVal < 0 ? "text-[#b35959]" : "text-[#6b726d]"
+                              }`}
+                            >
+                              {appVal > 0 ? "+" : ""}{appVal}%
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

@@ -349,13 +349,19 @@ def calculate_simulation(scenario: dict) -> dict:
             risk_alerts.append({"type": "warning", "message": f"{d['name']} receives less than 5%, which may feel exclusionary."})
     if fairness_score < 40:
         risk_alerts.append({"type": "error", "message": "Distribution is highly unequal. This may lead to family conflict."})
-    # Future projection (5 years)
+    # Future projection (5 years) - appreciation is calculated from purchase_price vs current_value
     future_values = []
     for a in assets:
-        appreciation = a.get("appreciation_percent", 0)
-        current = a.get("current_value", 0) * (a.get("ownership_percent", 100) / 100)
-        future_val = current * ((1 + appreciation / 100) ** 5)
-        future_values.append({"asset_name": a["asset_name"], "current_value": round(current, 2), "future_value_5yr": round(future_val, 2)})
+        purchase = a.get("purchase_price", 0)
+        current_raw = a.get("current_value", 0)
+        appreciation = ((current_raw - purchase) / purchase * 100) if purchase > 0 else 0
+        current = current_raw * (a.get("ownership_percent", 100) / 100)
+        # Use a conservative annual growth rate derived from total appreciation over asset age
+        purchased_year = a.get("purchased_year", datetime.now(timezone.utc).year)
+        years_held = max(1, datetime.now(timezone.utc).year - purchased_year)
+        annual_rate = ((current_raw / purchase) ** (1 / years_held) - 1) * 100 if purchase > 0 else 0
+        future_val = current * ((1 + annual_rate / 100) ** 5)
+        future_values.append({"asset_name": a["asset_name"], "current_value": round(current, 2), "future_value_5yr": round(future_val, 2), "appreciation_percent": round(appreciation, 2)})
     return {
         "total_estate_value": round(total_value, 2),
         "distribution": distribution,
@@ -384,7 +390,10 @@ def build_scenario_context(scenario: dict) -> str:
     ctx = f"Scenario: {scenario.get('name', 'Unnamed')}\n\n"
     ctx += "ASSETS:\n"
     for a in assets:
-        ctx += f"- {a['asset_name']} ({a['asset_type']}): Current Value {a['current_value']}, Ownership {a['ownership_percent']}%, Appreciation {a['appreciation_percent']}%\n"
+        purchase = a.get('purchase_price', 0)
+        current_val = a.get('current_value', 0)
+        appreciation = round(((current_val - purchase) / purchase * 100), 2) if purchase > 0 else 0
+        ctx += f"- {a['asset_name']} ({a['asset_type']}): Purchase Price {purchase}, Current Value {current_val}, Ownership {a['ownership_percent']}%, Asset Appreciation {appreciation}%\n"
     ctx += "\nFAMILY MEMBERS:\n"
     for m in members:
         ctx += f"- {m['name']} ({m['relationship']}), Age {m['age']}, Profession: {m['profession']}, About: {m['description']}\n"
