@@ -4,11 +4,14 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
-import { ArrowLeft, Send, Loader2, AlertTriangle, Shield, Edit, BarChart3, Save, MessageCircle, X } from "lucide-react";
+import { ArrowLeft, Send, Loader2, AlertTriangle, Shield, Edit, BarChart3, MessageCircle, X, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import AppFooter from "@/components/AppFooter";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
-const CHART_COLORS = ["#7c9082", "#c28e5c", "#8e998f", "#4a554e", "#b0b8b2", "#6b8e99", "#d4a574"];
+const CHART_COLORS = ["#7c9082", "#c28e5c", "#6b8e99", "#a67c52", "#8b6b99", "#5c8e7c", "#c2785c"];
 
 const quickQuestions = [
   "Is this distribution fair?",
@@ -27,7 +30,9 @@ export default function ResultsDashboard() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
+  const [exporting, setExporting] = useState(false);
   const chatEndRef = useRef(null);
+  const resultsRef = useRef(null);
 
   const loadScenario = useCallback(async () => {
     try {
@@ -74,6 +79,55 @@ export default function ResultsDashboard() {
     }
   };
 
+  const handleExportPDF = async () => {
+    if (!resultsRef.current) return;
+    setExporting(true);
+    try {
+      const element = resultsRef.current;
+      const canvas = await html2canvas(element, {
+        backgroundColor: "#0a0c0a",
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pdfWidth - 20;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 10;
+      // Title
+      pdf.setFillColor(10, 12, 10);
+      pdf.rect(0, 0, pdfWidth, pdfHeight, "F");
+      pdf.setTextColor(245, 240, 232);
+      pdf.setFontSize(18);
+      pdf.text(scenario?.name || "Simulation Results", 10, 15);
+      pdf.setFontSize(10);
+      pdf.setTextColor(163, 168, 164);
+      pdf.text(`Generated on ${new Date().toLocaleDateString()}`, 10, 22);
+      position = 28;
+      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      heightLeft -= (pdfHeight - position);
+      while (heightLeft > 0) {
+        pdf.addPage();
+        pdf.setFillColor(10, 12, 10);
+        pdf.rect(0, 0, pdfWidth, pdfHeight, "F");
+        position = -(pdfHeight - 28) + 10;
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+      pdf.save(`${scenario?.name || "NextHeir-Results"}.pdf`);
+      toast.success("PDF exported successfully!");
+    } catch (err) {
+      console.error("PDF export error:", err);
+      toast.error("Failed to export PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0c0a] flex items-center justify-center">
@@ -116,13 +170,22 @@ export default function ResultsDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              data-testid="export-pdf-btn"
+              onClick={handleExportPDF}
+              disabled={exporting}
+              variant="outline" className="border-[#3a423d] text-[#b8c9bc] hover:border-[#7c9082] hover:bg-[#121513] rounded-full text-sm"
+            >
+              {exporting ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : <Download className="w-3 h-3 mr-2" />}
+              {exporting ? "Exporting..." : "PDF"}
+            </Button>
             <Link to={`/scenario/${id}/edit`}>
-              <Button data-testid="edit-scenario-btn" variant="outline" className="border-[#3a423d] text-[#a3a8a4] hover:border-[#7c9082] hover:bg-[#121513] rounded-full text-sm">
+              <Button data-testid="edit-scenario-btn" variant="outline" className="border-[#3a423d] text-[#b8c9bc] hover:border-[#7c9082] hover:bg-[#121513] rounded-full text-sm">
                 <Edit className="w-3 h-3 mr-2" /> Edit
               </Button>
             </Link>
             <Link to="/compare">
-              <Button data-testid="compare-btn" variant="outline" className="border-[#3a423d] text-[#a3a8a4] hover:border-[#7c9082] hover:bg-[#121513] rounded-full text-sm">
+              <Button data-testid="compare-btn" variant="outline" className="border-[#3a423d] text-[#b8c9bc] hover:border-[#7c9082] hover:bg-[#121513] rounded-full text-sm">
                 <BarChart3 className="w-3 h-3 mr-2" /> Compare
               </Button>
             </Link>
@@ -138,11 +201,12 @@ export default function ResultsDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 md:px-12 py-8">
+        <div ref={resultsRef}>
         {/* Top Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flat-card rounded-2xl p-6" data-testid="total-estate-card">
             <p className="text-xs font-bold tracking-[0.2em] uppercase text-[#6b726d] mb-2">Total Estate Value</p>
-            <p className="text-3xl font-medium font-mono" style={{ color: "#7c9082" }}>
+            <p className="text-3xl font-medium font-mono text-[#f5f0e8]">
               {result.total_estate_value?.toLocaleString()}
             </p>
           </motion.div>
@@ -152,7 +216,7 @@ export default function ResultsDashboard() {
               <p className="text-3xl font-medium font-mono" style={{ color: fairnessColor }}>
                 {result.fairness_score}
               </p>
-              <span className="text-sm text-[#6b726d] mb-1">/ 100</span>
+              <span className="text-sm text-[#b8c9bc] mb-1">/ 100</span>
             </div>
             <div className="mt-3 h-2 bg-[#1a1d1a] rounded-full overflow-hidden">
               <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${result.fairness_score}%`, backgroundColor: fairnessColor }} />
@@ -165,7 +229,7 @@ export default function ResultsDashboard() {
                 {result.risk_alerts.map((alert, i) => (
                   <div key={i} className="flex items-start gap-2 text-sm">
                     <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: alert.type === "error" ? "#b35959" : "#c28e5c" }} />
-                    <span className="text-[#a3a8a4]">{alert.message}</span>
+                    <span className="text-[#f5f0e8]">{alert.message}</span>
                   </div>
                 ))}
               </div>
@@ -200,7 +264,7 @@ export default function ResultsDashboard() {
                   {pieData.map((d, i) => (
                     <div key={d.name} className="flex items-center gap-2 text-xs">
                       <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                      <span className="text-[#a3a8a4]">{d.name}: {d.value}%</span>
+                      <span className="text-[#f5f0e8]">{d.name}: {d.value}%</span>
                     </div>
                   ))}
                 </div>
@@ -217,13 +281,13 @@ export default function ResultsDashboard() {
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={barData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#232824" />
-                <XAxis dataKey="name" tick={{ fill: "#6b726d", fontSize: 11 }} />
-                <YAxis tick={{ fill: "#6b726d", fontSize: 11 }} />
+                <XAxis dataKey="name" tick={{ fill: "#b8c9bc", fontSize: 11 }} />
+                <YAxis tick={{ fill: "#b8c9bc", fontSize: 11 }} />
                 <Tooltip
-                  contentStyle={{ background: "#121513", border: "1px solid #232824", borderRadius: "8px", color: "#fff" }}
+                  contentStyle={{ background: "#121513", border: "1px solid #232824", borderRadius: "8px", color: "#f5f0e8" }}
                 />
-                <Bar dataKey="current" fill="#4a554e" name="Current" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="future" fill="#7c9082" name="5-Year" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="current" fill="#6b8e99" name="Current" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="future" fill="#c28e5c" name="5-Year" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </motion.div>
@@ -240,21 +304,24 @@ export default function ResultsDashboard() {
                     {d.name?.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{d.name}</p>
-                    <p className="text-xs text-[#6b726d]">{d.relationship}</p>
+                    <p className="text-sm font-medium text-[#f5f0e8]">{d.name}</p>
+                    <p className="text-xs text-[#b8c9bc]">{d.relationship}</p>
                   </div>
                 </div>
                 <div className="flex items-end justify-between">
-                  <p className="text-lg font-mono font-medium" style={{ color: CHART_COLORS[i % CHART_COLORS.length] }}>
+                  <p className="text-lg font-mono font-medium text-[#f5f0e8]">
                     {d.total_value?.toLocaleString()}
                   </p>
-                  <p className="text-sm font-mono text-[#6b726d]">{d.percentage_of_total}%</p>
+                  <p className="text-sm font-mono text-[#b8c9bc]">{d.percentage_of_total}%</p>
                 </div>
               </div>
             ))}
           </div>
         </motion.div>
+        </div>{/* end resultsRef */}
       </main>
+
+      <AppFooter />
 
       {/* AI Chat Panel */}
       <AnimatePresence>

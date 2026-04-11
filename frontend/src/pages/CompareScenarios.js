@@ -8,8 +8,9 @@ import { ArrowLeft, Send, Loader2, MessageCircle, AlertTriangle, Shield } from "
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import AppFooter from "@/components/AppFooter";
 
-const CHART_COLORS = ["#7c9082", "#c28e5c", "#8e998f", "#4a554e", "#b0b8b2"];
+const CHART_COLORS = ["#7c9082", "#c28e5c", "#6b8e99", "#a67c52", "#8b6b99"];
 
 const quickQuestions = [
   "Which is better?",
@@ -112,16 +113,16 @@ export default function CompareScenarios() {
 
     return (
       <div className="flat-card rounded-2xl p-6" data-testid={`compare-card-${label.toLowerCase()}`}>
-        <h3 className="text-base font-medium mb-4" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>
+        <h3 className="text-base font-medium mb-4 text-[#f5f0e8]" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>
           {data.name}
         </h3>
 
         {/* Fairness Score */}
         <div className="mb-4">
-          <p className="text-xs text-[#6b726d] mb-1">Fairness Score</p>
+          <p className="text-xs text-[#b8c9bc] mb-1">Fairness Score</p>
           <div className="flex items-end gap-2">
             <span className="text-2xl font-mono font-medium" style={{ color: fairnessColor }}>{sim.fairness_score}</span>
-            <span className="text-xs text-[#6b726d] mb-1">/ 100</span>
+            <span className="text-xs text-[#b8c9bc] mb-1">/ 100</span>
           </div>
           <div className="mt-2 h-1.5 bg-[#1a1d1a] rounded-full overflow-hidden">
             <div className="h-full rounded-full" style={{ width: `${sim.fairness_score}%`, backgroundColor: fairnessColor }} />
@@ -130,7 +131,7 @@ export default function CompareScenarios() {
 
         {/* Mini Pie */}
         <div className="mb-4">
-          <p className="text-xs text-[#6b726d] mb-2">Distribution</p>
+          <p className="text-xs text-[#b8c9bc] mb-2">Distribution</p>
           <ResponsiveContainer width="100%" height={160}>
             <PieChart>
               <Pie data={pieData} cx="50%" cy="50%" innerRadius={35} outerRadius={60} paddingAngle={3} dataKey="value">
@@ -138,12 +139,12 @@ export default function CompareScenarios() {
                   <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={{ background: "#121513", border: "1px solid #232824", borderRadius: "8px", color: "#fff" }} formatter={(v) => [`${v}%`]} />
+              <Tooltip contentStyle={{ background: "#121513", border: "1px solid #232824", borderRadius: "8px", color: "#f5f0e8" }} formatter={(v) => [`${v}%`]} />
             </PieChart>
           </ResponsiveContainer>
           <div className="flex flex-wrap gap-2">
             {pieData.map((d, i) => (
-              <span key={d.name} className="text-xs text-[#a3a8a4] flex items-center gap-1">
+              <span key={d.name} className="text-xs text-[#f5f0e8] flex items-center gap-1">
                 <span className="w-2 h-2 rounded-sm inline-block" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                 {d.name}: {d.value}%
               </span>
@@ -153,11 +154,11 @@ export default function CompareScenarios() {
 
         {/* Risk Alerts */}
         <div>
-          <p className="text-xs text-[#6b726d] mb-2">Alerts</p>
+          <p className="text-xs text-[#b8c9bc] mb-2">Alerts</p>
           {sim.risk_alerts?.length > 0 ? (
             <div className="space-y-1">
               {sim.risk_alerts.map((a, i) => (
-                <div key={i} className="flex items-start gap-2 text-xs text-[#a3a8a4]">
+                <div key={i} className="flex items-start gap-2 text-xs text-[#f5f0e8]">
                   <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" style={{ color: a.type === "error" ? "#b35959" : "#c28e5c" }} />
                   {a.message}
                 </div>
@@ -313,6 +314,7 @@ export default function CompareScenarios() {
           </div>
         )}
       </main>
+      <AppFooter />
     </div>
   );
 }

@@ -40,12 +40,12 @@ export default function LoginPage() {
       {/* Left - Image */}
       <div className="hidden lg:flex lg:w-1/2 relative">
         <img
-          src="https://images.unsplash.com/photo-1683395715087-931a7eed3f78?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzl8MHwxfHNlYXJjaHwzfHx3ZWFsdGglMjBmaW5hbmNlJTIwYWJzdHJhY3QlMjBkYXJrfGVufDB8fHx8MTc3NTM2ODgxMXww&ixlib=rb-4.1.0&q=85"
+          src="https://images.unsplash.com/photo-1757439402268-1da284675170?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2ODl8MHwxfHNlYXJjaHwyfHxsdXh1cnklMjBwcml2YXRlJTIwdmlsbGElMjBlc3RhdGUlMjBuaWdodHxlbnwwfHx8fDE3NzU5MDQwMTJ8MA&ixlib=rb-4.1.0&q=85"
           alt="" className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#0a0c0a] via-[#0a0c0a]/60 to-transparent" />
         <div className="absolute bottom-12 left-12 max-w-md">
-          <h2 className="text-3xl font-medium tracking-tight mb-3" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>
+          <h2 className="text-3xl font-medium tracking-tight mb-3 text-[#f5f0e8]" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>
             Protect your <span className="text-[#7c9082]">legacy</span>
           </h2>
           <p className="text-sm text-[#a3a8a4] leading-relaxed">AI-powered inheritance simulation for high-net-worth families.</p>

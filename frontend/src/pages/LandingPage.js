@@ -2,6 +2,9 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Shield, Lock, Eye, ArrowRight, Briefcase, Users, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import TipsSection from "@/components/TipsSection";
+import DeveloperFooter from "@/components/DeveloperFooter";
+import AppFooter from "@/components/AppFooter";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -140,6 +143,12 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Tips Section */}
+      <TipsSection />
+
+      {/* Developed By */}
+      <DeveloperFooter />
 
       {/* Footer */}
       <footer className="border-t border-[#232824] py-12 px-6 md:px-12" data-testid="landing-footer">

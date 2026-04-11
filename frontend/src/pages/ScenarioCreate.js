@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Loader2, Check, Briefcase, Users, BarChart3 } from "lucide-react";
 import { motion } from "framer-motion";
+import AppFooter from "@/components/AppFooter";
 import { toast } from "sonner";
 
 const ASSET_TYPES = ["Property", "Business", "Mutual Funds", "Bullions/Precious Metals"];
@@ -498,6 +499,8 @@ export default function ScenarioCreate() {
           )}
         </div>
       </main>
+
+      <AppFooter />
 
       {/* Simulation Overlay */}
       {simulating && (

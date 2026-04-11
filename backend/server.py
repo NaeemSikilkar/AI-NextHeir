@@ -305,6 +305,27 @@ async def delete_scenario(scenario_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Scenario not found")
     return {"message": "Scenario deleted"}
 
+@api_router.post("/scenarios/{scenario_id}/duplicate", status_code=201)
+async def duplicate_scenario(scenario_id: str, request: Request):
+    user = await get_current_user(request)
+    original = await db.scenarios.find_one({"_id": ObjectId(scenario_id), "user_id": user["_id"]})
+    if not original:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+    new_doc = {
+        "user_id": user["_id"],
+        "name": f"{original.get('name', 'Scenario')} (Copy)",
+        "assets": original.get("assets", []),
+        "family_members": original.get("family_members", []),
+        "allocations": original.get("allocations", []),
+        "simulation_result": None,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    result = await db.scenarios.insert_one(new_doc)
+    new_doc["id"] = str(result.inserted_id)
+    new_doc.pop("_id", None)
+    return new_doc
+
 # --- Simulation ---
 def calculate_simulation(scenario: dict) -> dict:
     assets = scenario.get("assets", [])

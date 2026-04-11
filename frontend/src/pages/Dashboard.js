@@ -3,9 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Plus, BarChart3, Calendar, LogOut, Trash2, Loader2, PlayCircle } from "lucide-react";
+import { Plus, BarChart3, Calendar, LogOut, Trash2, Loader2, PlayCircle, Copy } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import AppFooter from "@/components/AppFooter";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -40,6 +41,16 @@ export default function Dashboard() {
       toast.success("Scenario deleted");
     } catch {
       toast.error("Failed to delete");
+    }
+  };
+
+  const handleDuplicate = async (id) => {
+    try {
+      const { data } = await api.post(`/scenarios/${id}/duplicate`);
+      setScenarios((prev) => [...prev, { id: data.id, name: data.name, created_at: data.created_at, has_simulation: false }]);
+      toast.success("Scenario duplicated! Edit the distribution to create a new version.");
+    } catch {
+      toast.error("Failed to duplicate scenario");
     }
   };
 
@@ -124,16 +135,27 @@ export default function Dashboard() {
                 data-testid={`scenario-card-${i}`}
               >
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-base font-medium truncate pr-2" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>
+                  <h3 className="text-base font-medium truncate pr-2 text-[#f5f0e8]" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>
                     {s.name}
                   </h3>
-                  <button
-                    onClick={() => handleDelete(s.id)}
-                    className="text-[#6b726d] hover:text-[#b35959] transition-colors opacity-0 group-hover:opacity-100"
-                    data-testid={`delete-scenario-${i}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => handleDuplicate(s.id)}
+                      className="text-[#6b726d] hover:text-[#7c9082] transition-colors p-1"
+                      data-testid={`duplicate-scenario-${i}`}
+                      title="Duplicate scenario"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(s.id)}
+                      className="text-[#6b726d] hover:text-[#b35959] transition-colors p-1"
+                      data-testid={`delete-scenario-${i}`}
+                      title="Delete scenario"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-[#6b726d] mb-6">
                   <Calendar className="w-3 h-3" />
@@ -159,6 +181,7 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+      <AppFooter />
     </div>
   );
 }

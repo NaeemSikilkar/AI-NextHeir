@@ -371,6 +371,29 @@ class NextHeirAPITester:
                     
         return None
 
+    def test_duplicate_scenario(self, scenario_id):
+        """Test duplicating a scenario"""
+        success, response = self.run_test(
+            "Duplicate Scenario",
+            "POST",
+            f"scenarios/{scenario_id}/duplicate",
+            201
+        )
+        
+        if success:
+            new_scenario_id = response.get('id')
+            new_name = response.get('name')
+            print(f"   Duplicated scenario ID: {new_scenario_id}")
+            print(f"   New scenario name: {new_name}")
+            
+            if new_scenario_id and "(Copy)" in new_name:
+                print(f"   ✅ Scenario duplicated successfully")
+                self.scenario_ids.append(new_scenario_id)
+                return new_scenario_id
+            else:
+                print(f"   ❌ Duplicate scenario response invalid")
+        return None
+
     def test_compare_scenarios(self):
         """Test compare scenarios functionality"""
         if len(self.scenario_ids) >= 2:
@@ -419,7 +442,7 @@ class NextHeirAPITester:
         return success
 
 def main():
-    print("🚀 Starting NextHeir API Testing - Iteration 3")
+    print("🚀 Starting NextHeir API Testing - Iteration 4")
     print("=" * 60)
     
     tester = NextHeirAPITester()
@@ -464,25 +487,30 @@ def main():
     if not tester.test_update_scenario(scenario_id_1):
         print("❌ Update scenario failed")
 
-    # Test 9: AI Chat
+    # Test 9: Duplicate scenario
+    duplicate_scenario_id = tester.test_duplicate_scenario(scenario_id_1)
+    if not duplicate_scenario_id:
+        print("❌ Duplicate scenario failed")
+
+    # Test 10: AI Chat
     session_id = tester.test_ai_chat(scenario_id_1)
     if not session_id:
         print("❌ AI Chat failed")
 
-    # Test 10: Edge case - single asset/member
+    # Test 11: Edge case - single asset/member
     edge_scenario_id = tester.test_edge_case_single_asset_member()
     if not edge_scenario_id:
         print("❌ Edge case scenario failed")
 
-    # Test 11: Compare scenarios
+    # Test 12: Compare scenarios
     if not tester.test_compare_scenarios():
         print("❌ Compare scenarios failed")
 
-    # Test 12: Delete scenarios (cleanup)
+    # Test 13: Delete scenarios (cleanup)
     for sid in tester.scenario_ids:
         tester.test_delete_scenario(sid)
 
-    # Test 13: Logout
+    # Test 14: Logout
     if not tester.test_logout():
         print("❌ Logout failed")
 
