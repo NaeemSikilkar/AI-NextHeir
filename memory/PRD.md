@@ -25,13 +25,17 @@ Build a web-based AI product for high-net-worth individuals to simulate wealth d
 ## What's Been Implemented (April 2026)
 - Full landing page with dark luxury theme (Metallic Black + Metallic Sage Green)
 - JWT auth (register, login, logout, refresh) with admin seeding
-- Dashboard with scenario CRUD
+- Dashboard with scenario CRUD + duplicate scenario feature
 - 3-step scenario wizard (assets, family mapping, distribution with 100% validation)
 - Simulation engine: fairness scoring, risk alerts, 5-year projections
 - Results dashboard: Recharts pie/bar charts, fairness gauge, distribution breakdown
 - AI Chat panel on results page (Gemini 3 Flash)
 - Compare scenarios page with AI comparison chat
-- All tests passing: 100% backend, 100% frontend, 100% integration
+- PDF export of simulation results (jspdf + html2canvas)
+- "Tips on How to Use NextHeir" section with 7 tips and disclaimer
+- "Developed By" section with Naeem Sikilkar bio/photo/LinkedIn on all pages
+- Updated color palette: cream/white/sage green text, diverse chart colors
+- Login page with luxury property image
 
 ## Prioritized Backlog
 ### P0 (Critical) - DONE
