@@ -4,10 +4,11 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
-import { ArrowLeft, Send, Loader2, AlertTriangle, Shield, Edit, BarChart3, MessageCircle, X, Download } from "lucide-react";
+import { Send, Loader2, AlertTriangle, Shield, Edit, BarChart3, MessageCircle, X, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import AppFooter from "@/components/AppFooter";
+import AppHeader from "@/components/AppHeader";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -158,49 +159,37 @@ export default function ResultsDashboard() {
   return (
     <div className="min-h-screen bg-[#0a0c0a]">
       {/* Header */}
-      <header className="glass-surface border-b border-[#232824] sticky top-0 z-40" data-testid="results-header">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate("/dashboard")} className="text-[#a3a8a4] hover:text-white transition-colors" data-testid="back-to-dashboard">
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="text-sm font-medium" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>{scenario?.name || "Results"}</h1>
-              <p className="text-xs text-[#6b726d]">Simulation Results</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              data-testid="export-pdf-btn"
-              onClick={handleExportPDF}
-              disabled={exporting}
-              variant="outline" className="border-[#3a423d] text-[#b8c9bc] hover:border-[#7c9082] hover:bg-[#121513] rounded-full text-sm"
-            >
-              {exporting ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : <Download className="w-3 h-3 mr-2" />}
-              {exporting ? "Exporting..." : "PDF"}
-            </Button>
-            <Link to={`/scenario/${id}/edit`}>
-              <Button data-testid="edit-scenario-btn" variant="outline" className="border-[#3a423d] text-[#b8c9bc] hover:border-[#7c9082] hover:bg-[#121513] rounded-full text-sm">
-                <Edit className="w-3 h-3 mr-2" /> Edit
-              </Button>
-            </Link>
-            <Link to="/compare">
-              <Button data-testid="compare-btn" variant="outline" className="border-[#3a423d] text-[#b8c9bc] hover:border-[#7c9082] hover:bg-[#121513] rounded-full text-sm">
-                <BarChart3 className="w-3 h-3 mr-2" /> Compare
-              </Button>
-            </Link>
-            <Button
-              data-testid="ai-chat-toggle-btn"
-              onClick={() => setChatOpen(!chatOpen)}
-              className="bg-[#7c9082] text-[#0a0c0a] hover:bg-[#98ab9e] rounded-full text-sm glow-sage"
-            >
-              <MessageCircle className="w-3 h-3 mr-2" /> AI Advisor
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader>
+        <span className="text-sm font-medium text-[#f5f0e8] mr-2" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>{scenario?.name || "Results"}</span>
+        <Button
+          data-testid="export-pdf-btn"
+          onClick={handleExportPDF}
+          disabled={exporting}
+          variant="outline" className="border-[#3a423d] text-[#b8c9bc] hover:border-[#7c9082] hover:bg-[#121513] rounded-full text-sm"
+        >
+          {exporting ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : <Download className="w-3 h-3 mr-2" />}
+          {exporting ? "Exporting..." : "PDF"}
+        </Button>
+        <Link to={`/scenario/${id}/edit`}>
+          <Button data-testid="edit-scenario-btn" variant="outline" className="border-[#3a423d] text-[#b8c9bc] hover:border-[#7c9082] hover:bg-[#121513] rounded-full text-sm">
+            <Edit className="w-3 h-3 mr-2" /> Edit
+          </Button>
+        </Link>
+        <Link to="/compare">
+          <Button data-testid="compare-btn" variant="outline" className="border-[#3a423d] text-[#b8c9bc] hover:border-[#7c9082] hover:bg-[#121513] rounded-full text-sm">
+            <BarChart3 className="w-3 h-3 mr-2" /> Compare
+          </Button>
+        </Link>
+        <Button
+          data-testid="ai-chat-toggle-btn"
+          onClick={() => setChatOpen(!chatOpen)}
+          className="bg-[#7c9082] text-[#0a0c0a] hover:bg-[#98ab9e] rounded-full text-sm glow-sage"
+        >
+          <MessageCircle className="w-3 h-3 mr-2" /> AI Advisor
+        </Button>
+      </AppHeader>
 
-      <main className="max-w-7xl mx-auto px-6 md:px-12 py-8">
+      <main className="max-w-7xl mx-auto px-6 md:px-12 py-8 pt-24">
         <div ref={resultsRef}>
         {/* Top Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

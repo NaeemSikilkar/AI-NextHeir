@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Plus, BarChart3, Calendar, LogOut, Trash2, Loader2, PlayCircle, Copy } from "lucide-react";
+import { Plus, BarChart3, Calendar, Trash2, Loader2, PlayCircle, Copy } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import AppFooter from "@/components/AppFooter";
+import AppHeader from "@/components/AppHeader";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -14,8 +15,7 @@ const fadeUp = {
 };
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [scenarios, setScenarios] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,33 +54,11 @@ export default function Dashboard() {
     }
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/");
-  };
-
   return (
     <div className="min-h-screen bg-[#0a0c0a]">
-      {/* Top bar */}
-      <header className="glass-surface border-b border-[#232824] sticky top-0 z-40" data-testid="dashboard-header">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 h-16 flex items-center justify-between">
-          <Link to="/dashboard" className="text-xl font-bold tracking-tight" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>
-            <span className="text-white">Next</span><span className="text-[#7c9082]">Heir</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-[#a3a8a4] hidden md:inline">{user?.name || user?.email}</span>
-            <Button
-              data-testid="logout-btn"
-              variant="ghost" onClick={handleLogout}
-              className="text-[#a3a8a4] hover:text-white hover:bg-[#121513]"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
-      <main className="max-w-7xl mx-auto px-6 md:px-12 py-12">
+      <main className="max-w-7xl mx-auto px-6 md:px-12 py-12 pt-28">
         {/* Welcome */}
         <motion.div initial="hidden" animate="visible" className="mb-12">
           <motion.p variants={fadeUp} custom={0} className="text-xs font-bold tracking-[0.2em] uppercase text-[#6b726d] mb-2">

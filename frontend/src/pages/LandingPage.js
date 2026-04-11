@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import TipsSection from "@/components/TipsSection";
 import DeveloperFooter from "@/components/DeveloperFooter";
 import AppFooter from "@/components/AppFooter";
+import AppHeader from "@/components/AppHeader";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -27,28 +28,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#0a0c0a]">
       {/* Header */}
-      <header className="glass-surface fixed top-0 w-full z-50" data-testid="landing-header">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 h-16 flex items-center justify-between">
-          <Link to="/" className="text-xl font-bold tracking-tight" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>
-            <span className="text-white">Next</span><span className="text-[#7c9082]">Heir</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-8 text-sm text-[#a3a8a4]">
-            <a href="#about" className="hover:text-white transition-colors">About</a>
-            <a href="#how-it-works" className="hover:text-white transition-colors">How it Works</a>
-            <Link to="/login" className="hover:text-white transition-colors">Login</Link>
-            <Link to="/register">
-              <Button data-testid="header-get-started-btn" className="bg-[#7c9082] text-[#0a0c0a] hover:bg-[#98ab9e] rounded-full px-6 font-medium glow-sage">
-                Get Started
-              </Button>
-            </Link>
-          </nav>
-          <Link to="/register" className="md:hidden">
-            <Button data-testid="header-mobile-get-started-btn" className="bg-[#7c9082] text-[#0a0c0a] hover:bg-[#98ab9e] rounded-full px-4 text-sm font-medium">
-              Get Started
-            </Button>
-          </Link>
-        </div>
-      </header>
+      <AppHeader />
 
       {/* Hero */}
       <section className="relative min-h-screen flex items-center pt-16" data-testid="hero-section">

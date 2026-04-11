@@ -4,11 +4,12 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Send, Loader2, MessageCircle, AlertTriangle, Shield } from "lucide-react";
+import { Send, Loader2, MessageCircle, AlertTriangle, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import AppFooter from "@/components/AppFooter";
+import AppHeader from "@/components/AppHeader";
 
 const CHART_COLORS = ["#7c9082", "#c28e5c", "#6b8e99", "#a67c52", "#8b6b99"];
 
@@ -184,18 +185,11 @@ export default function CompareScenarios() {
 
   return (
     <div className="min-h-screen bg-[#0a0c0a]">
-      <header className="glass-surface border-b border-[#232824] sticky top-0 z-40" data-testid="compare-header">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate("/dashboard")} className="text-[#a3a8a4] hover:text-white transition-colors" data-testid="back-to-dashboard">
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <h1 className="text-sm font-medium" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>Compare Scenarios</h1>
-          </div>
-        </div>
-      </header>
+      <AppHeader>
+        <span className="text-sm font-medium text-[#f5f0e8]" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>Compare Scenarios</span>
+      </AppHeader>
 
-      <main className="max-w-7xl mx-auto px-6 md:px-12 py-8">
+      <main className="max-w-7xl mx-auto px-6 md:px-12 py-8 pt-24">
         {/* Selectors */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="space-y-2">

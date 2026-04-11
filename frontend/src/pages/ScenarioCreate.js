@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Loader2, Check, Briefcase, Users, BarChart3 } from "lucide-react";
 import { motion } from "framer-motion";
 import AppFooter from "@/components/AppFooter";
+import AppHeader from "@/components/AppHeader";
 import { toast } from "sonner";
 
 const ASSET_TYPES = ["Property", "Business", "Mutual Funds", "Bullions/Precious Metals"];
@@ -210,16 +211,14 @@ export default function ScenarioCreate() {
   return (
     <div className="min-h-screen bg-[#0a0c0a]">
       {/* Header */}
-      <header className="glass-surface border-b border-[#232824] sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-sm text-[#a3a8a4] hover:text-white transition-colors" data-testid="back-to-dashboard">
-            <ArrowLeft className="w-4 h-4" /> Dashboard
-          </button>
-          <span className="text-sm text-[#6b726d]">{id ? "Edit" : "New"} Scenario</span>
-        </div>
-      </header>
+      <AppHeader>
+        <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-sm text-[#a3a8a4] hover:text-white transition-colors" data-testid="back-to-dashboard">
+          <ArrowLeft className="w-4 h-4" /> Dashboard
+        </button>
+        <span className="text-sm text-[#6b726d]">{id ? "Edit" : "New"} Scenario</span>
+      </AppHeader>
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="max-w-5xl mx-auto px-6 py-8 pt-24">
         {/* Stepper */}
         <div className="flex items-center justify-center gap-2 mb-12" data-testid="scenario-stepper">
           {stepConfig.map((s, i) => (

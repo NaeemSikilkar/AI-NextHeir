@@ -4,7 +4,7 @@ const NAEEM_PHOTO = "https://customer-assets.emergentagent.com/job_heir-planner/
 
 export default function DeveloperFooter() {
   return (
-    <section className="py-24 md:py-32 px-6 md:px-12 border-t border-[#232824]" data-testid="developed-by-section">
+    <section id="developed-by" className="py-24 md:py-32 px-6 md:px-12 border-t border-[#232824]" data-testid="developed-by-section">
       <div className="max-w-4xl mx-auto">
         <p className="text-xs font-bold tracking-[0.2em] uppercase text-[#6b726d] mb-8 text-center">
           Developed By
