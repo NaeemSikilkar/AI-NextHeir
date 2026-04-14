@@ -128,6 +128,8 @@ class CompareChatInput(BaseModel):
     scenario_b_id: str
     session_id: Optional[str] = None
 
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "sikilkarnaeem@gmail.com").lower().strip()
+
 # --- Auth Endpoints ---
 @api_router.post("/auth/register")
 async def register(input: RegisterInput, response: Response):
@@ -136,11 +138,12 @@ async def register(input: RegisterInput, response: Response):
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     hashed = hash_password(input.password)
+    role = "admin" if email == ADMIN_EMAIL else "user"
     user_doc = {
         "email": email,
         "password_hash": hashed,
         "name": input.name,
-        "role": "user",
+        "role": role,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     result = await db.users.insert_one(user_doc)
@@ -149,7 +152,7 @@ async def register(input: RegisterInput, response: Response):
     refresh_token = create_refresh_token(user_id)
     response.set_cookie(key="access_token", value=access_token, httponly=True, secure=False, samesite="lax", max_age=3600, path="/")
     response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, secure=False, samesite="lax", max_age=604800, path="/")
-    return {"id": user_id, "email": email, "name": input.name, "role": "user"}
+    return {"id": user_id, "email": email, "name": input.name, "role": role}
 
 @api_router.post("/auth/login")
 async def login(input: LoginInput, request: Request, response: Response):
@@ -173,11 +176,15 @@ async def login(input: LoginInput, request: Request, response: Response):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     await db.login_attempts.delete_one({"identifier": identifier})
     user_id = str(user["_id"])
+    # Dynamic admin role assignment
+    role = "admin" if email == ADMIN_EMAIL else user.get("role", "user")
+    if role != user.get("role"):
+        await db.users.update_one({"_id": user["_id"]}, {"$set": {"role": role}})
     access_token = create_access_token(user_id, email)
     refresh_token = create_refresh_token(user_id)
     response.set_cookie(key="access_token", value=access_token, httponly=True, secure=False, samesite="lax", max_age=3600, path="/")
     response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, secure=False, samesite="lax", max_age=604800, path="/")
-    return {"id": user_id, "email": user["email"], "name": user.get("name", ""), "role": user.get("role", "user")}
+    return {"id": user_id, "email": user["email"], "name": user.get("name", ""), "role": role}
 
 @api_router.post("/auth/logout")
 async def logout(response: Response):
@@ -208,6 +215,15 @@ async def refresh_token(request: Request, response: Response):
         return {"message": "Token refreshed"}
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+# --- Admin Endpoints ---
+@api_router.get("/admin/users")
+async def get_all_users(request: Request):
+    user = await get_current_user(request)
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(1000)
+    return users
 
 # --- Scenario Endpoints ---
 @api_router.post("/scenarios", status_code=201)
@@ -588,20 +604,30 @@ async def startup():
     await seed_admin()
 
 async def seed_admin():
-    admin_email = os.environ.get("ADMIN_EMAIL", "admin@nextheir.com")
+    admin_email = os.environ.get("ADMIN_EMAIL", "sikilkarnaeem@gmail.com").lower().strip()
     admin_password = os.environ.get("ADMIN_PASSWORD", "Admin123!")
     existing = await db.users.find_one({"email": admin_email})
     if existing is None:
         hashed = hash_password(admin_password)
-        await db.users.insert_one({"email": admin_email, "password_hash": hashed, "name": "Admin", "role": "admin", "created_at": datetime.now(timezone.utc).isoformat()})
+        await db.users.insert_one({"email": admin_email, "password_hash": hashed, "name": "Naeem Sikilkar", "role": "admin", "created_at": datetime.now(timezone.utc).isoformat()})
         logger.info(f"Admin user seeded: {admin_email}")
-    elif not verify_password(admin_password, existing["password_hash"]):
-        await db.users.update_one({"email": admin_email}, {"$set": {"password_hash": hash_password(admin_password)}})
-        logger.info("Admin password updated")
+    else:
+        updates = {}
+        if not verify_password(admin_password, existing["password_hash"]):
+            updates["password_hash"] = hash_password(admin_password)
+        if existing.get("role") != "admin":
+            updates["role"] = "admin"
+        if updates:
+            await db.users.update_one({"email": admin_email}, {"$set": updates})
+            logger.info("Admin user updated")
+    # Ensure old admin gets demoted if different email
+    old_admin_email = "admin@nextheir.com"
+    if old_admin_email != admin_email:
+        await db.users.update_many({"email": old_admin_email, "role": "admin"}, {"$set": {"role": "user"}})
     # Write test credentials
     os.makedirs("/app/memory", exist_ok=True)
     with open("/app/memory/test_credentials.md", "w") as f:
-        f.write(f"# Test Credentials\n\n## Admin\n- Email: {admin_email}\n- Password: {admin_password}\n- Role: admin\n\n## Auth Endpoints\n- POST /api/auth/register\n- POST /api/auth/login\n- POST /api/auth/logout\n- GET /api/auth/me\n- POST /api/auth/refresh\n")
+        f.write(f"# Test Credentials\n\n## Admin\n- Email: {admin_email}\n- Password: {admin_password}\n- Role: admin\n\n## Auth Endpoints\n- POST /api/auth/register\n- POST /api/auth/login\n- POST /api/auth/logout\n- GET /api/auth/me\n- POST /api/auth/refresh\n\n## Admin Endpoints\n- GET /api/admin/users (admin only)\n")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

@@ -2,6 +2,7 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminRoute from "@/components/AdminRoute";
 import LandingPage from "@/pages/LandingPage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
@@ -9,6 +10,7 @@ import Dashboard from "@/pages/Dashboard";
 import ScenarioCreate from "@/pages/ScenarioCreate";
 import ResultsDashboard from "@/pages/ResultsDashboard";
 import CompareScenarios from "@/pages/CompareScenarios";
+import AdminDashboard from "@/pages/AdminDashboard";
 import { Toaster } from "@/components/ui/sonner";
 
 function App() {
@@ -24,6 +26,7 @@ function App() {
           <Route path="/scenario/:id/edit" element={<ProtectedRoute><ScenarioCreate /></ProtectedRoute>} />
           <Route path="/scenario/:id/results" element={<ProtectedRoute><ResultsDashboard /></ProtectedRoute>} />
           <Route path="/compare" element={<ProtectedRoute><CompareScenarios /></ProtectedRoute>} />
+          <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" />
