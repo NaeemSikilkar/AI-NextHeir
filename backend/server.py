@@ -605,21 +605,12 @@ async def startup():
 
 async def seed_admin():
     admin_email = os.environ.get("ADMIN_EMAIL", "sikilkarnaeem@gmail.com").lower().strip()
-    admin_password = os.environ.get("ADMIN_PASSWORD", "Admin123!")
     existing = await db.users.find_one({"email": admin_email})
-    if existing is None:
-        hashed = hash_password(admin_password)
-        await db.users.insert_one({"email": admin_email, "password_hash": hashed, "name": "Naeem Sikilkar", "role": "admin", "created_at": datetime.now(timezone.utc).isoformat()})
-        logger.info(f"Admin user seeded: {admin_email}")
-    else:
-        updates = {}
-        if not verify_password(admin_password, existing["password_hash"]):
-            updates["password_hash"] = hash_password(admin_password)
-        if existing.get("role") != "admin":
-            updates["role"] = "admin"
-        if updates:
-            await db.users.update_one({"email": admin_email}, {"$set": updates})
-            logger.info("Admin user updated")
+    if existing is not None and existing.get("role") != "admin":
+        await db.users.update_one({"email": admin_email}, {"$set": {"role": "admin"}})
+        logger.info(f"Granted admin role to: {admin_email}")
+    elif existing is None:
+        logger.info(f"Admin user {admin_email} not registered yet — will get admin role on signup")
     # Ensure old admin gets demoted if different email
     old_admin_email = "admin@nextheir.com"
     if old_admin_email != admin_email:
@@ -627,7 +618,7 @@ async def seed_admin():
     # Write test credentials
     os.makedirs("/app/memory", exist_ok=True)
     with open("/app/memory/test_credentials.md", "w") as f:
-        f.write(f"# Test Credentials\n\n## Admin\n- Email: {admin_email}\n- Password: {admin_password}\n- Role: admin\n\n## Auth Endpoints\n- POST /api/auth/register\n- POST /api/auth/login\n- POST /api/auth/logout\n- GET /api/auth/me\n- POST /api/auth/refresh\n\n## Admin Endpoints\n- GET /api/admin/users (admin only)\n")
+        f.write(f"# Test Credentials\n\n## Admin\n- Email: {admin_email}\n- Password: (user's own password from registration)\n- Role: admin (auto-granted on login/register)\n\n## Auth Endpoints\n- POST /api/auth/register\n- POST /api/auth/login\n- POST /api/auth/logout\n- GET /api/auth/me\n- POST /api/auth/refresh\n\n## Admin Endpoints\n- GET /api/admin/users (admin only)\n")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
