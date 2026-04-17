@@ -5,6 +5,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response
+from fastapi.responses import StreamingResponse
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
@@ -14,10 +15,13 @@ import bcrypt
 import jwt
 import secrets
 import uuid
+import random
+import io
 from datetime import datetime, timezone, timedelta
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+import openpyxl
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -128,6 +132,23 @@ class CompareChatInput(BaseModel):
     scenario_b_id: str
     session_id: Optional[str] = None
 
+class OtpSendInput(BaseModel):
+    phone: str
+    country_code: str
+
+class OtpVerifyInput(BaseModel):
+    phone: str
+    country_code: str
+    otp: str
+    name: Optional[str] = None
+
+class ForgotPasswordInput(BaseModel):
+    email: str
+
+class ResetPasswordInput(BaseModel):
+    token: str
+    new_password: str
+
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "sikilkarnaeem@gmail.com").lower().strip()
 
 # --- Auth Endpoints ---
@@ -216,6 +237,94 @@ async def refresh_token(request: Request, response: Response):
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
+# --- OTP Auth Endpoints ---
+@api_router.post("/auth/otp/send")
+async def send_otp(input: OtpSendInput):
+    phone_full = f"{input.country_code}{input.phone}".strip()
+    otp = str(random.randint(100000, 999999))
+    expires = datetime.now(timezone.utc) + timedelta(minutes=5)
+    await db.otp_codes.update_one(
+        {"phone": phone_full},
+        {"$set": {"otp": otp, "expires_at": expires.isoformat(), "used": False}},
+        upsert=True
+    )
+    logger.info(f"[SIMULATED SMS] OTP for {phone_full}: {otp}")
+    return {"message": "OTP sent successfully", "simulated_otp": otp, "phone": phone_full}
+
+@api_router.post("/auth/otp/verify")
+async def verify_otp(input: OtpVerifyInput, response: Response):
+    phone_full = f"{input.country_code}{input.phone}".strip()
+    record = await db.otp_codes.find_one({"phone": phone_full, "used": False})
+    if not record:
+        raise HTTPException(status_code=400, detail="No OTP found. Please request a new one.")
+    if record["otp"] != input.otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+    if datetime.now(timezone.utc) > datetime.fromisoformat(record["expires_at"]):
+        raise HTTPException(status_code=400, detail="OTP expired. Please request a new one.")
+    await db.otp_codes.update_one({"_id": record["_id"]}, {"$set": {"used": True}})
+    # Find or create user by phone
+    user = await db.users.find_one({"phone": phone_full})
+    if not user:
+        user_doc = {
+            "phone": phone_full,
+            "email": None,
+            "password_hash": None,
+            "name": input.name or "",
+            "role": "user",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        result = await db.users.insert_one(user_doc)
+        user_id = str(result.inserted_id)
+        name = input.name or ""
+    else:
+        user_id = str(user["_id"])
+        name = user.get("name", "")
+        if input.name and not name:
+            await db.users.update_one({"_id": user["_id"]}, {"$set": {"name": input.name}})
+            name = input.name
+    email_for_token = phone_full
+    access_token = create_access_token(user_id, email_for_token)
+    refresh_token_val = create_refresh_token(user_id)
+    response.set_cookie(key="access_token", value=access_token, httponly=True, secure=False, samesite="lax", max_age=86400, path="/")
+    response.set_cookie(key="refresh_token", value=refresh_token_val, httponly=True, secure=False, samesite="lax", max_age=604800, path="/")
+    role = user.get("role", "user") if user else "user"
+    return {"id": user_id, "email": email_for_token, "name": name, "role": role, "phone": phone_full}
+
+# --- Forgot Password Endpoints ---
+@api_router.post("/auth/forgot-password")
+async def forgot_password(input: ForgotPasswordInput):
+    email = input.email.lower().strip()
+    user = await db.users.find_one({"email": email})
+    if not user:
+        raise HTTPException(status_code=404, detail="No account found with this email")
+    token = secrets.token_urlsafe(32)
+    expires = datetime.now(timezone.utc) + timedelta(hours=1)
+    await db.password_reset_tokens.insert_one({
+        "token": token,
+        "user_id": user["_id"],
+        "email": email,
+        "expires_at": expires.isoformat(),
+        "used": False
+    })
+    frontend_url = os.environ.get("FRONTEND_URL", "https://heir-planner.preview.emergentagent.com")
+    reset_link = f"{frontend_url}/reset-password?token={token}"
+    logger.info(f"[SIMULATED EMAIL] Password reset for {email}: {reset_link}")
+    return {"message": "Password reset link generated", "simulated_reset_link": reset_link}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(input: ResetPasswordInput):
+    record = await db.password_reset_tokens.find_one({"token": input.token, "used": False})
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+    if datetime.now(timezone.utc) > datetime.fromisoformat(record["expires_at"]):
+        raise HTTPException(status_code=400, detail="Reset link has expired. Please request a new one.")
+    if len(input.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    hashed = hash_password(input.new_password)
+    await db.users.update_one({"_id": record["user_id"]}, {"$set": {"password_hash": hashed}})
+    await db.password_reset_tokens.update_one({"_id": record["_id"]}, {"$set": {"used": True}})
+    return {"message": "Password reset successfully. You can now login with your new password."}
+
 # --- Admin Endpoints ---
 @api_router.get("/admin/users")
 async def get_all_users(request: Request):
@@ -224,6 +333,51 @@ async def get_all_users(request: Request):
         raise HTTPException(status_code=403, detail="Admin access required")
     users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(1000)
     return users
+
+@api_router.get("/admin/users/export")
+async def export_users_excel(request: Request, from_date: Optional[str] = None, till_date: Optional[str] = None):
+    user = await get_current_user(request)
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    query = {}
+    if from_date or till_date:
+        date_filter = {}
+        if from_date:
+            date_filter["$gte"] = from_date
+        if till_date:
+            date_filter["$lte"] = till_date + "T23:59:59"
+        query["created_at"] = date_filter
+    users = await db.users.find(query, {"_id": 0, "password_hash": 0}).sort("created_at", -1).to_list(10000)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Registered Users"
+    headers = ["Full Name", "Email", "Signup Date"]
+    ws.append(headers)
+    for col in range(1, 4):
+        ws.cell(row=1, column=col).font = openpyxl.styles.Font(bold=True)
+        ws.cell(row=1, column=col).fill = openpyxl.styles.PatternFill(start_color="7C9082", end_color="7C9082", fill_type="solid")
+        ws.cell(row=1, column=col).font = openpyxl.styles.Font(bold=True, color="FFFFFF")
+    for u in users:
+        created = u.get("created_at", "")
+        if created:
+            try:
+                dt = datetime.fromisoformat(created)
+                created = dt.strftime("%b %d, %Y")
+            except Exception:
+                pass
+        ws.append([u.get("name", "—"), u.get("email") or u.get("phone", "—"), created])
+    ws.column_dimensions["A"].width = 25
+    ws.column_dimensions["B"].width = 35
+    ws.column_dimensions["C"].width = 18
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    filename = f"NextHeir_Users_{datetime.now(timezone.utc).strftime('%Y%m%d')}.xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 # --- Scenario Endpoints ---
 @api_router.post("/scenarios", status_code=201)
@@ -598,9 +752,13 @@ app.add_middleware(
 # Startup
 @app.on_event("startup")
 async def startup():
-    await db.users.create_index("email", unique=True)
+    await db.users.create_index("email", unique=True, sparse=True)
+    await db.users.create_index("phone", sparse=True)
     await db.login_attempts.create_index("identifier")
     await db.chat_history.create_index("session_id")
+    await db.otp_codes.create_index("phone")
+    await db.password_reset_tokens.create_index("token")
+    await db.password_reset_tokens.create_index("expires_at", expireAfterSeconds=0)
     await seed_admin()
 
 async def seed_admin():
