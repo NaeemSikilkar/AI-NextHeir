@@ -267,7 +267,6 @@ async def verify_otp(input: OtpVerifyInput, response: Response):
     if not user:
         user_doc = {
             "phone": phone_full,
-            "email": None,
             "password_hash": None,
             "name": input.name or "",
             "role": "user",
@@ -752,13 +751,17 @@ app.add_middleware(
 # Startup
 @app.on_event("startup")
 async def startup():
+    # Ensure proper indexes - drop and recreate email index as sparse to allow null for phone-only users
+    try:
+        await db.users.drop_index("email_1")
+    except Exception:
+        pass
     await db.users.create_index("email", unique=True, sparse=True)
     await db.users.create_index("phone", sparse=True)
     await db.login_attempts.create_index("identifier")
     await db.chat_history.create_index("session_id")
     await db.otp_codes.create_index("phone")
     await db.password_reset_tokens.create_index("token")
-    await db.password_reset_tokens.create_index("expires_at", expireAfterSeconds=0)
     await seed_admin()
 
 async def seed_admin():
