@@ -25,9 +25,17 @@ db = client["nextheir"]
 # ========================
 app = FastAPI()
 
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = [
+    "http://localhost:3000",
+    "https://*.netlify.app",
+    "https://69e3182ae0523fff40a1ff47--prismatic-pithivier-b2a9dc.netlify.app"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # For now allow all (easy fix)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
